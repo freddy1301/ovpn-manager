@@ -25,5 +25,5 @@ Just download the file straight from the main branch and run it on your OpenVPN 
 It will work as a normal user with sudo privileges but wont be able to put your configurations into /opt/openvpn/clients
 
 ```
-wget https://raw.githubusercontent.com/freddy1301/ovpn-clientmanager/main/clients.sh && chmod +x clients.sh && ./clients.sh
+wget https://raw.githubusercontent.com/freddy1301/ovpn-manager/main/ovpn-manager.sh && chmod +x ovpn-manager.sh && ./ovpn-manager.sh
 ```
