@@ -1,4 +1,4 @@
-# ovpn-clientmanager
+# ovpn-manager
 
 Simple Bash script to Add/Remove/Export Client Certificates of your OpenVPN Docker Instance and also Install your OpenVPN Server (only on Debian Systems)
 
