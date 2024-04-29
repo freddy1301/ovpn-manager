@@ -18,6 +18,7 @@ Simple Bash script to Add/Remove/Export Client Certificates of your OpenVPN Dock
 
 ### What do I need?
 1. Sudo and Docker Privileges on your system
+2. Screen Installed
 
 ### How to Install
 Just download the file straight from the main branch and run it on your OpenVPN Server.
@@ -25,5 +26,5 @@ Just download the file straight from the main branch and run it on your OpenVPN 
 It will work as a normal user with sudo privileges but wont be able to put your configurations into /opt/openvpn/clients
 
 ```
-wget https://raw.githubusercontent.com/freddy1301/ovpn-manager/main/ovpn-manager.sh && chmod +x ovpn-manager.sh && ./ovpn-manager.sh
+wget https://raw.githubusercontent.com/freddy1301/ovpn-manager/main/ovpn-manager.sh && chmod +x ovpn-manager.sh && sudo apt update && sudo apt install screen -y && ./ovpn-manager.sh
 ```
