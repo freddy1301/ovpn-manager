@@ -1,6 +1,6 @@
 #!/bin/bash
 
-container="<YOUR OpenVPN CONTAINER NAME>"
+container="<PLEASE ENTER YOUR CONTAINER NAME HERE>"
 container_set=false
 
 echo " "
@@ -11,7 +11,7 @@ echo " "
 
 if command -v docker &> /dev/null; then
     # Check if Docker is Installed
-    if docker ps -a --format '{{.Names}}' | grep -q "^$container$"; then
+    if sudo docker ps -a --format '{{.Names}}' | grep -q "^$container$"; then
     echo "Registered Clients:"
     installed=true
     else
@@ -42,16 +42,21 @@ while true; do
             read client_name
             echo " "
             
-            echo "Generating Client Certifcate (You need to enter you root_ca privatkey passphrase)"
+            echo "Generating Client Certifcate (You need to enter your root_ca privatekey passphrase)"
             sudo docker run -v /opt/openvpn:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full $client_name nopass
-            echo "Exporting Client Configuration File to /opt/openvpn/clients/xxx"
-            sudo docker exec $container ovpn_getclient $client_name > /opt/openvpn/clients/$client_name.ovpn
+            sudo docker exec $container ovpn_getclient $client_name > $client_name.ovpn
+	        if mv ./$client_name.ovpn /opt/openvpn/clients 2> /dev/null ;then
+                echo "Exporting Client Configuration File to /opt/openvpn/clients/$client_name"
+            else
+                echo "Exporting Client Configuration File to ./$client_name.ovpn"
+            fi
+
             
             unset client_name
             exit 0
             ;;
         2)
-            echo "Client Name:"
+            echo "Client Name (Only on at a time!):"
             read client_name
             echo " "
 
@@ -73,7 +78,7 @@ while true; do
 
             if [ "$answer" == "Y" ]; then
                 echo "Deleting files..."
-                echo "$files" | xargs rm -f
+                echo "$files" | xargs sudo rm -f
                 echo "Files deleted!"
             else
                 echo "No files have been deleted!"
@@ -101,8 +106,8 @@ while true; do
             echo " "
             echo "What should your Docker Container be called?" 
             read container
-            sed -i 's/<YOUR OpenVPN CONTAINER NAME>/'$container'/g' ovpn-manager.sh
-            sed -i 's/container_set=false/container_set=true/g' ovpn.sh
+            sed -i 's/<PLEASE ENTER YOUR CONTAINER NAME HERE>/'$container'/g' ovpn-manager.sh
+            sed -i 's/container_set=false/container_set=true/g' ovpn-manager.sh
             echo "Name Set! The Script exited to reload variables."
             exit 0
             ;;
@@ -132,6 +137,7 @@ while true; do
                     else
                 echo "The Process will run in the background. You can still check with screen -x ovpn-install"
                 fi
+                unset answer
                 # Wait until the Install is done
                 while screen -list | grep -q ovpn-install; do
                 sleep 1
@@ -145,7 +151,7 @@ while true; do
 
                     attempt=1
                     while [ $attempt -le $max_attempts ]; do
-                        if ! systemctl is-active --quiet docker; then
+                        if ! sudo systemctl is-active --quiet docker; then
                             echo "Waiting for the Docker.service to come online ($attempt of $max_attempts Attempts)..."
                             sleep $sleep_time
                             ((attempt++))
@@ -159,37 +165,41 @@ while true; do
                       echo "The Docker Service did not start in $((max_attempts * sleep_time)) Seconds. The Script will exit now."
                         exit 1
                     fi
+                unset max_attempts
+                unset sleep_time
+                unset attempt
                 # Pull the Docker Image
                 echo "Pulling Image..."
-                docker pull kylemanna/openvpn
+                sudo docker pull kylemanna/openvpn
                 OVPN_DATA="/opt/openvpn"
                 echo " "
                 echo "At what IP/DNS Address can Clients reach your Server?"
                 read hostname
                 echo " "
                 echo "Generating OpenVPN Configuration..."
-                docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://$hostname
+                sudo docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://$hostname
                 echo "Configuration Initialized and stored at /opt/openvpn/openvpn.conf"
                 echo " "
                 echo "Now the CA to Sign Client Certificates will be set up. You will be asked to put in a passphrase. This passphrase will be required to Add or Revoke Clients. Note it down properly and make it secure!"
                 echo " "
                 echo "Press Enter to continue..."
                 read _
-                docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki
+                sudo docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki
                 echo " "
                 echo "Creating /opt/openvpn/clients directory"
-                mkdir /opt/openvpn/clients
-                cp ./ovpn.sh /opt/openvpn/clients
+                sudo mkdir /opt/openvpn/clients
+                sudo cp ./ovpn-manager.sh /opt/openvpn
                 echo "Installation Finished!"
                 sleep 1
                 echo "Starting the Container..."
-                docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --name $container --cap-add=NET_ADMIN kylemanna/openvpn
-                docker inspect $container
+                sudo docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --name $container --cap-add=NET_ADMIN kylemanna/openvpn
+                sudo docker inspect $container
                 echo " "
                 echo "The Container is now up and running (hopefully). Dont forget to open 1194/udp"
                 echo "Bye!"
                 exit 0
             fi
+            unset hostname
             ;;
         0)
             echo "Exiting.."
